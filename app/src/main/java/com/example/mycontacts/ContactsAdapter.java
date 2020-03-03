@@ -2,7 +2,6 @@ package com.example.mycontacts;
 
 import android.content.Context;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -14,20 +13,24 @@ import com.example.mycontacts.Model.Contact;
 
 import java.util.ArrayList;
 
-public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.MyViewHolder> {
+public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.ContactViewHolder> {
 
-    private ArrayList<Contact> contactArrayList;
-    private Context context;
+    private ArrayList<Contact> contactArrayList = new ArrayList<>();
     private MainActivity mainActivity;
 
-    public class MyViewHolder extends RecyclerView.ViewHolder {
+    public void setContactArrayList(ArrayList<Contact> contactArrayList) {
+        this.contactArrayList = contactArrayList;
+        notifyDataSetChanged();
+    }
+
+    public class ContactViewHolder extends RecyclerView.ViewHolder {
 
         private TextView firstNameTextView;
         private TextView lastNameTextView;
         private TextView emailTextView;
         private TextView phoneNumberTextView;
 
-        public MyViewHolder(@NonNull View itemView) {
+        public ContactViewHolder(@NonNull View itemView) {
             super(itemView);
             firstNameTextView = itemView.findViewById(R.id.firstNameTextView);
             lastNameTextView = itemView.findViewById(R.id.lastNameTextView);
@@ -36,22 +39,21 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.MyView
         }
     }
 
-    public ContactsAdapter(Context context, ArrayList<Contact> contacts, MainActivity mainActivity) {
-        this.context = context;
+    public ContactsAdapter(ArrayList<Contact> contacts, MainActivity mainActivity) {
         this.contactArrayList = contacts;
         this.mainActivity = mainActivity;
     }
 
     @NonNull
     @Override
-    public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ContactViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.contact_list_item,
                 parent, false);
-        return new MyViewHolder(itemView);
+        return new ContactViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull MyViewHolder holder, final int position) {
+    public void onBindViewHolder(@NonNull ContactViewHolder holder, final int position) {
 
         final Contact contact = contactArrayList.get(position);
 
@@ -68,11 +70,11 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.MyView
         });
     }
 
-    public void onItemDismiss(int position) {
+    /*public void onItemDismiss(int position) {
         contactArrayList.remove(position);
         //mainActivity.deleteContact(contact, position);
         notifyItemRemoved(position);
-    }
+    }*/
 
     public void onItemMove(int fromPosition, int toPosition) {
         Contact prev = contactArrayList.remove(fromPosition);
@@ -84,6 +86,4 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsAdapter.MyView
     public int getItemCount() {
         return contactArrayList.size();
     }
-
-
 }

@@ -4,9 +4,14 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
+import com.example.mycontacts.Model.Contact;
+
+import java.util.ArrayList;
+
+/*public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
 
     private ContactsAdapter contactsAdapter;
+    private ArrayList<Contact> contactArrayList = new ArrayList<>();
 
     public SimpleItemTouchHelperCallback(ContactsAdapter adapter) {
         contactsAdapter = adapter;
@@ -30,4 +35,4 @@ public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
     public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
         contactsAdapter.onItemDismiss(viewHolder.getAdapterPosition());
     }
-}
+}*/

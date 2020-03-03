@@ -1,5 +1,6 @@
 package com.example.mycontacts;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.DefaultItemAnimator;
@@ -32,8 +33,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private ContactsAppDataBase contactsAppDataBase;
 /////////////
-    SimpleItemTouchHelperCallback callback;
-    ItemTouchHelper itemTouchHelper;
+    /*SimpleItemTouchHelperCallback callback;
+    ItemTouchHelper itemTouchHelper;*/
 ////////////
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,22 +42,49 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
+
+        contactsAdapter = new ContactsAdapter(contactArrayList, MainActivity.this);
+        recyclerView.setAdapter(contactsAdapter);
 
         contactsAppDataBase = Room.databaseBuilder(getApplicationContext(), ContactsAppDataBase.class,
                 "ContactDB").build();
 
-        new GetAllContactAsyncTask().execute();
-
-        contactsAdapter = new ContactsAdapter(this, contactArrayList, MainActivity.this);
-
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-        recyclerView.setAdapter(contactsAdapter);
+        loadContacts();
 ////////////////////
-        callback = new SimpleItemTouchHelperCallback(contactsAdapter);
+       /* callback = new SimpleItemTouchHelperCallback(contactsAdapter);
         itemTouchHelper = new ItemTouchHelper(callback);
-        itemTouchHelper.attachToRecyclerView(recyclerView);
+        itemTouchHelper.attachToRecyclerView(recyclerView);*/
+
+       new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+
+           @Override
+           public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+               final int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+               final int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
+
+              //Contact contact =
+               return makeMovementFlags(dragFlags, swipeFlags);
+
+           }
+
+           @Override
+           public boolean onMove(@NonNull RecyclerView recyclerView,
+                                 @NonNull RecyclerView.ViewHolder viewHolder,
+                                 @NonNull RecyclerView.ViewHolder target) {
+               contactsAdapter.onItemMove(viewHolder.getAdapterPosition(), target.getAdapterPosition());
+               return true;
+           }
+
+           //Метод отрабатывает свап влево и удаляет из БД и списка Контакт
+           @Override
+           public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                Contact contact = contactArrayList.get(viewHolder.getAdapterPosition());
+                deleteContact(contact);
+           }
+       }).attachToRecyclerView(recyclerView);
+
 ////////////////////
 
 
@@ -95,56 +123,48 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton(isUpdate ? "Update" : "Save", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        if (TextUtils.isEmpty(firstNameEditText.getText().toString())) {
+                            Toast.makeText(MainActivity.this, "Enter First Name!", Toast.LENGTH_SHORT).show();
+                            return;
+                        } else if (TextUtils.isEmpty(lastNameEditText.getText().toString())) {
+                            Toast.makeText(MainActivity.this, "Enter Last Name", Toast.LENGTH_SHORT).show();
+                            return;
+                        } else if (TextUtils.isEmpty(emailEditText.getText().toString())) {
+                            Toast.makeText(MainActivity.this, "Enter Email", Toast.LENGTH_SHORT).show();
+                            return;
+                        } else if (TextUtils.isEmpty(phoneNumberEditText.getText().toString())) {
+                            Toast.makeText(MainActivity.this, "Enter Phone Number", Toast.LENGTH_SHORT).show();
+                            return;
+                        } else {
 
+                            if (isUpdate && contact != null) {
+                                updateContact(firstNameEditText.getText().toString(),
+                                        lastNameEditText.getText().toString(),
+                                        emailEditText.getText().toString(),
+                                        phoneNumberEditText.getText().toString(),
+                                        position);
+                            } else {
+                                createContact(firstNameEditText.getText().toString(),
+                                        lastNameEditText.getText().toString(),
+                                        emailEditText.getText().toString(),
+                                        phoneNumberEditText.getText().toString());
+                            }
+                        }
                     }
-                }).setNegativeButton(isUpdate ? "Delete" : "Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                if (isUpdate) {
-                    deleteContact(contact, position);
-                } else {
-                    dialog.cancel();
-                }
-            }
-        });
+                });
         final AlertDialog alertDialog = alertDialogBuilder.create();
         alertDialog.show();
-
-        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (TextUtils.isEmpty(firstNameEditText.getText().toString())) {
-                    Toast.makeText(MainActivity.this, "Enter First Name!", Toast.LENGTH_SHORT).show();
-                    return;
-                } else if (TextUtils.isEmpty(lastNameEditText.getText().toString())) {
-                    Toast.makeText(MainActivity.this, "Enter Last Name", Toast.LENGTH_SHORT).show();
-                    return;
-                } else if (TextUtils.isEmpty(emailEditText.getText().toString())) {
-                    Toast.makeText(MainActivity.this, "Enter Email", Toast.LENGTH_SHORT).show();
-                    return;
-                } else if (TextUtils.isEmpty(phoneNumberEditText.getText().toString())) {
-                    Toast.makeText(MainActivity.this, "Enter Phone Number", Toast.LENGTH_SHORT).show();
-                    return;
-                } else {
-                    alertDialog.dismiss();
-                }
-
-                if (isUpdate && contact != null) {
-                    updateContact(firstNameEditText.getText().toString(), lastNameEditText.getText().toString(),
-                            emailEditText.getText().toString(), phoneNumberEditText.getText().toString(), position);
-                } else {
-                    createContact(firstNameEditText.getText().toString(), lastNameEditText.getText().toString(),
-                            emailEditText.getText().toString(), phoneNumberEditText.getText().toString());
-                }
-            }
-        });
     }
 
-    private void deleteContact(Contact contact, int position) {
+    private void loadContacts() {
 
-        contactArrayList.remove(position);
+        new GetAllContactAsyncTask().execute();
+
+    }
+
+    private void deleteContact(Contact contact) {
+
         new DeleteContactAsyncTask().execute(contact);
-
     }
 
     private void updateContact(String firstName, String lastName, String email, String phoneNumber, int position) {
@@ -170,15 +190,14 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            contactArrayList.addAll(contactsAppDataBase.getContactDAO().getAllContacts());
-            //contactArrayList = (ArrayList<Contact>)contactsAppDataBase.getContactDAO().getAllContacts();
+            contactArrayList = (ArrayList<Contact>)contactsAppDataBase.getContactDAO().getAllContacts();
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            contactsAdapter.notifyDataSetChanged();
+            contactsAdapter.setContactArrayList(contactArrayList);
         }
     }
 
@@ -186,19 +205,16 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Contact... contacts) {
-            long id = contactsAppDataBase.getContactDAO().addContact(contacts[0]);
-            Contact contact = contactsAppDataBase.getContactDAO().getContact(id);
+            //long id = contactsAppDataBase.getContactDAO().addContact(contacts[0]);
+            contactsAppDataBase.getContactDAO().addContact(contacts[0]);
 
-            if (contact != null) {
-                contactArrayList.add(0, contact);
-            }
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            contactsAdapter.notifyDataSetChanged();
+            loadContacts();
         }
     }
 
@@ -213,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            contactsAdapter.notifyDataSetChanged();
+            loadContacts();
         }
     }
 
@@ -228,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            contactsAdapter.notifyDataSetChanged();
+            loadContacts();
         }
     }
 }
