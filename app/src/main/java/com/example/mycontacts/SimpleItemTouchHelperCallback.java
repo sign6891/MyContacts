@@ -1,13 +1,5 @@
 package com.example.mycontacts;
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.mycontacts.Model.Contact;
-
-import java.util.ArrayList;
-
 /*public class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
 
     private ContactsAdapter contactsAdapter;

@@ -1,4 +1,4 @@
-package com.example.mycontacts.Model;
+package com.example.mycontacts;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -24,14 +24,25 @@ public class Contact {
     @ColumnInfo(name = "contact_phone_number")
     private String phoneNumber;
 
+    //private int position;
+
 
     public Contact(long id, String firstName, String lastName, String email, String phoneNumber) {
         this.id = id;
+        //this.position = position;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.phoneNumber = phoneNumber;
     }
+
+    /*public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
+    }*/
 
     public long getId() {
         return id;

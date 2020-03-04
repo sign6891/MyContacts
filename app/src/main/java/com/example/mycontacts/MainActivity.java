@@ -3,26 +3,25 @@ package com.example.mycontacts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.databinding.DataBindingUtil;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Window;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.mycontacts.Data.ContactsAppDataBase;
-import com.example.mycontacts.Model.Contact;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.mycontacts.databinding.ActivityMainBinding;
 
 import java.util.ArrayList;
 
@@ -30,9 +29,13 @@ public class MainActivity extends AppCompatActivity {
 
     private ContactsAdapter contactsAdapter;
     private ArrayList<Contact> contactArrayList = new ArrayList<>();
-    private RecyclerView recyclerView;
+   // private RecyclerView recyclerView;
     private ContactsAppDataBase contactsAppDataBase;
-/////////////
+
+    private ClickFloatingActionButton clickFloatingActionButton;
+    private ActivityMainBinding activityMainBinding;
+
+    /////////////
     /*SimpleItemTouchHelperCallback callback;
     ItemTouchHelper itemTouchHelper;*/
 ////////////
@@ -41,7 +44,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        recyclerView = findViewById(R.id.recyclerView);
+        activityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        clickFloatingActionButton = new ClickFloatingActionButton(this);
+        activityMainBinding.setButtonHandler(clickFloatingActionButton);
+
+       // recyclerView = findViewById(R.id.recyclerView);
+        RecyclerView recyclerView = activityMainBinding.layoutContentMain.recyclerView;
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setHasFixedSize(true);
 
@@ -57,44 +65,43 @@ public class MainActivity extends AppCompatActivity {
         itemTouchHelper = new ItemTouchHelper(callback);
         itemTouchHelper.attachToRecyclerView(recyclerView);*/
 
-       new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
 
-           @Override
-           public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-               final int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
-               final int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
+            @Override
+            public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                final int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+                final int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
+                return makeMovementFlags(dragFlags, swipeFlags);
+            }
 
-              //Contact contact =
-               return makeMovementFlags(dragFlags, swipeFlags);
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
 
-           }
+                //позиции в списке по индексам
+                contactsAdapter.onItemMove(viewHolder.getAdapterPosition(), target.getAdapterPosition());
+                return true;
+            }
 
-           @Override
-           public boolean onMove(@NonNull RecyclerView recyclerView,
-                                 @NonNull RecyclerView.ViewHolder viewHolder,
-                                 @NonNull RecyclerView.ViewHolder target) {
-               contactsAdapter.onItemMove(viewHolder.getAdapterPosition(), target.getAdapterPosition());
-               return true;
-           }
-
-           //Метод отрабатывает свап влево и удаляет из БД и списка Контакт
-           @Override
-           public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            //Метод отрабатывает свап влево и удаляет из БД и списка Контакт
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 Contact contact = contactArrayList.get(viewHolder.getAdapterPosition());
                 deleteContact(contact);
-           }
-       }).attachToRecyclerView(recyclerView);
+            }
+        }).attachToRecyclerView(recyclerView);
 
 ////////////////////
-
-
-        FloatingActionButton floatingActionButton = (FloatingActionButton) findViewById(R.id.floatingActionButton);
+        /*FloatingActionButton floatingActionButton = (FloatingActionButton) findViewById(R.id.floatingActionButton);
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 addAndEditContacts(false, null, -1);
             }
-        });
+        });*/
+
+
     }
 
     public void addAndEditContacts(final boolean isUpdate, final Contact contact, final int position) {
@@ -190,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            contactArrayList = (ArrayList<Contact>)contactsAppDataBase.getContactDAO().getAllContacts();
+            contactArrayList = (ArrayList<Contact>) contactsAppDataBase.getContactDAO().getAllContacts();
             return null;
         }
 
@@ -245,6 +252,18 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             loadContacts();
+        }
+    }
+
+    public class ClickFloatingActionButton {
+        Context context;
+
+        public ClickFloatingActionButton(Context context) {
+            this.context = context;
+        }
+
+        public void onFloatingActionButton(View view) {
+            addAndEditContacts(false, null, -1);
         }
     }
 }
